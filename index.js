@@ -3,6 +3,9 @@ const data = fs.readFileSync("./js_markdown.md", "utf-8");
 htmlRes(data);
 var htmlArr = [];
 var htmlData = []; //html元素数组
+var titleArr = [];//列表数组
+
+
 //判断是不是####
 function htmlRes(data) {
   if (htmlArr === undefined) htmlArr = [];
@@ -29,8 +32,7 @@ function htmlRes(data) {
       returnImg(item);
     }
     //判断有序列表
-    // console.log((item[0]-0))
-    if ('0123456789'.indexOf(item[0] - 0)!==-1) {
+    if (returnIsOl(item)) {
       let arr = htmlArr[index].split('')
       let num = 0
       let flag = true
@@ -43,12 +45,56 @@ function htmlRes(data) {
         }
         i=i+1
       }
-      console.log(num,'连续的空格数')
-      // returnOl(item,index);
+      console.log(num,item,'这一行的')
+      if(num % 4 === 0 && num !==0){
+        let sign = num/4
+        if(!titleArr)titleArr = []
+        if(titleArr.length == 0 && sign>=1){
+          console.log(item,'这个是要return出去的额')
+          return 
+        }else{
+          console.log(item,'处理的数\n')
+          let last = callBackFn(titleArr,sign)
+          if(last.num===1){//说明有这个深度的children
+              if(last.data.children){
+                last.data.children.push({0:item})
+              }else{
+                last.data.children = [{0:item}]
+              }
+          }
+        }
+      }else{
+        if(!titleArr)titleArr = []
+        titleArr.push({0:item,children:[]})
+      }
+      // console.log(JSON.stringify(titleArr),'titleArr11111',returnIsOl(htmlArr[index+1]),htmlArr[index+1])
+      if(!returnIsOl(htmlArr[index+1])){//这里判断下一行是不是li不是的话直接处理数据并清空 titleArr
+         //进行处理
+         console.log(JSON.stringify(titleArr),'olllll\n')
+         let ol = returnOl(titleArr)
+         console.log(JSON.stringify(ol),'json\n')
+         titleArr = [] //制空处理
+      }
     }
+    // console.log(JSON.stringify(titleArr) ,'\n' ,'连续的空格数')
   });
 }
-
+function returnIsOl(item){
+  console.log(item,'0123456789'.indexOf(item[0] - 0)!==-1 && item[1] === '.','itemitemitemitem')
+  return '0123456789'.indexOf(item.trim()[0] - 0)!==-1
+}
+//判断有没有这个深度的children
+function callBackFn(data,num){
+  if(!data.length)return {data,num}
+  if(num<1)return undefined
+  if(num === 1){
+    if(!data.length)return {data,num}
+    return {data:data[data.length-1],num}
+  }else{
+    if(!data[data.length-1])return {data,num}
+    return callBackFn(data[data.length-1].children,num-1)
+  }
+}
 //返回标题
 function retrunTitle(item) {
   // 1-7 #
@@ -171,25 +217,24 @@ function returnImg(item) {
 }
 
 //----------------------------无序列表-------------------------------------
-function returnOl(content,index) {
-  content = content.trim();
-  let arrHtml = [content]; 
-  let {successCount} = returnContinu(index,arrHtml,'1234567890',0)
-  let htmlStr = createElementQ("ol", { }, "ol");
-  arrHtml.forEach((item,i)=>{
-    arrHtml[i]  = createElementQ('li',{},'li')
-    arrHtml[i].splice(1,0,item)
-    arrHtml[i] =arrHtml[i].join(' ')
-  })
-  htmlArr.splice(index + 1, successCount);
-  htmlStr.splice(1,0,arrHtml.join(''))
-  htmlData = htmlData.concat(htmlStr.join(''));
+function returnOl(content) {
+    let ol = createElementQ('ol',{},'ol') 
+    if(content.length){
+       for(let i=0;i<content.length;i++){
+        let li = createElementQ('li',{},'li')
+           for(let key in content[i]){
+              if(key === 'children'){
+                let olC = returnOl(content[i][key])
+                li.splice(li.length-1,0,olC)
+              }else{
+                li.splice(li.length-1,0,content[i][key])
+              }
+           }
+           ol.splice(ol.length-1,0,li)
+       }
+    }
+    return ol
 }
-
-
-
-
-
 
 //创建标签
 function createElementQ(name, classObj) {
