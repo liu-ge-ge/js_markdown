@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=\, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="./index.css">
+  </head>
+  <body>
+    <div></div>
+    <img src="./dryhfhryh.png" alt="">
+    <script src="./index.js"></script>
+    <script>
+      const res = htmlRes(`
+        
+        ### 这是一个标题 ### 这是一个标题
+#### 这是一个标题
+### 这是一个标题
+### 这是一个标题
+### 这是一个标题
+
+### 这是一个标题
+
+ 这是一个连接[点击](http:www.baidu.com)
+
+> ### 这是一个引用标题
+> 这是一个引用
+> ### 这是第二个引用标题
+
+![图片alt](./dryhfhryh.png "图片title")
+> ### 这是第二个引用标题
+1. 标题1
+    11. 标题1.1
+        121. 标题1.1.1
+        123. 标题1.1.1
+        124. 标题1.1.1
+        125. 标题1.1.1
+        126. 标题1.1.1
+    2. 标题2.2
+        1. 标题2.1
+        1. 标题2.1
+        1. 标题2.1
+        1. 标题2.1
+        1. 标题2.1
+        1. 标题2.1
+### 中间分开的东西这个是
+> 这又是一个引用
+<span style="color:red;">这是一个span标签</span>
+<div style="width:100px;height:100rpx;background:red;color:white;line-height:100px;text-align:center">刘超宾最帅</div>
+
+        `);
+let div = document.querySelector('div')
+div.innerHTML = res.join(' ')
+console.log(res)
+    </script>
+  </body>
+</html>

@@ -1,15 +1,20 @@
-let fs = require("fs");
+const fs = require("fs");
 const data = fs.readFileSync("./js_markdown.md", "utf-8");
+// console.log(data,'datra')
+let keys = {
+  "red":["let","var","function","=","for"],
+  "blue":["console.log"]
+}
 htmlRes(data);
 var htmlArr = [];
 var htmlData = []; //html元素数组
-var titleArr = [];//列表数组
-
+var titleArr = []; //列表数组
 
 //判断是不是####
 function htmlRes(data) {
   if (htmlArr === undefined) htmlArr = [];
   htmlArr = data.split("\n");
+  // console.log(htmlArr,'htmlArrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr')
   htmlArr.forEach((item, index) => {
     item = item.trim();
     //标题
@@ -20,7 +25,7 @@ function htmlRes(data) {
       }
     }
     // //超链接 字符必须超过6个
-    if (item.length > 6) {
+    if (item.length > 6 && item.trim()[0] !== "!") {
       ifLink(item);
     }
     //引用语法
@@ -33,66 +38,76 @@ function htmlRes(data) {
     }
     //判断有序列表
     if (returnIsOl(item)) {
-      let arr = htmlArr[index].split('')
-      let num = 0
-      let flag = true
-      let i = 0
-      while(flag){
-        if(arr[i] === ' '){
-          num = num+1
-        }else{
-          flag = false
+      let arr = htmlArr[index].split("");
+      let num = 0;
+      let flag = true;
+      let i = 0;
+      while (flag) {
+        if (arr[i] === " ") {
+          num = num + 1;
+        } else {
+          flag = false;
         }
-        i=i+1
+        i = i + 1;
       }
-      console.log(num,item,'这一行的')
-      if(num % 4 === 0 && num !==0){
-        let sign = num/4
-        if(!titleArr)titleArr = []
-        if(titleArr.length == 0 && sign>=1){
-          console.log(item,'这个是要return出去的额')
-          return 
-        }else{
-          console.log(item,'处理的数\n')
-          let last = callBackFn(titleArr,sign)
-          if(last.num===1){//说明有这个深度的children
-              if(last.data.children){
-                last.data.children.push({0:item})
-              }else{
-                last.data.children = [{0:item}]
-              }
+      if (num % 4 === 0 && num !== 0) {
+        let sign = num / 4;
+        if (!titleArr) titleArr = [];
+        if (titleArr.length == 0 && sign >= 1) {
+          return;
+        } else {
+          let last = callBackFn(titleArr, sign);
+          if (last.num === 1) {
+            //说明有这个深度的children
+            if (last.data.children) {
+              last.data.children.push({ 0: item });
+            } else {
+              last.data.children = [{ 0: item }];
+            }
           }
         }
-      }else{
-        if(!titleArr)titleArr = []
-        titleArr.push({0:item,children:[]})
+      } else {
+        if (!titleArr) titleArr = [];
+        titleArr.push({ 0: item, children: [] });
       }
       // console.log(JSON.stringify(titleArr),'titleArr11111',returnIsOl(htmlArr[index+1]),htmlArr[index+1])
-      if(!returnIsOl(htmlArr[index+1])){//这里判断下一行是不是li不是的话直接处理数据并清空 titleArr
-         //进行处理
-         console.log(JSON.stringify(titleArr),'olllll\n')
-         let ol = returnOl(titleArr)
-         console.log(JSON.stringify(ol),'json\n')
-         titleArr = [] //制空处理
+      if (!returnIsOl(htmlArr[index + 1])) {
+        //这里判断下一行是不是li不是的话直接处理数据并清空 titleArr
+        //进行处理
+        let ol = returnOl(titleArr);
+        htmlData.push(ol.flat(Infinity).join(" "));
+        titleArr = []; //制空处理
       }
+    }
+
+    //html标签
+    if(/^<[a-z]* *style=\".*\">.*<\/[a-z]*>/.test(item)){
+      htmlData.push(item)
+    }
+
+    //代码块
+    // console.log(item,'item3')
+    if(item.slice(0,4) === '````'){
+       returnCodeBlock(item,index)
     }
     // console.log(JSON.stringify(titleArr) ,'\n' ,'连续的空格数')
   });
+
+  return htmlData;
 }
-function returnIsOl(item){
-  console.log(item,'0123456789'.indexOf(item[0] - 0)!==-1 && item[1] === '.','itemitemitemitem')
-  return '0123456789'.indexOf(item.trim()[0] - 0)!==-1
+function returnIsOl(item) {
+  return "0123456789".indexOf(item.trim()[0] - 0) !== -1;
 }
 //判断有没有这个深度的children
-function callBackFn(data,num){
-  if(!data.length)return {data,num}
-  if(num<1)return undefined
-  if(num === 1){
-    if(!data.length)return {data,num}
-    return {data:data[data.length-1],num}
-  }else{
-    if(!data[data.length-1])return {data,num}
-    return callBackFn(data[data.length-1].children,num-1)
+function callBackFn(data, num) {
+  if (!data.length) return { data, num };
+  if (num < 1) return undefined;
+  if (num === 1) {
+    if (!data.length) return { data, num };
+    return { data: data[data.length - 1], num };
+  } else {
+    if (!data[data.length - 1]) return { data, num };
+    return callBackFn(data[data.length - 1].children, num - 1);
   }
 }
 //返回标题
@@ -159,7 +174,7 @@ function ifLink(content) {
 function returnQuote(content, index = null) {
   content = content.trim();
   let arrHtml = [content.slice(1).trim()]; //引用的数据
-  let {successCount} = returnContinu(index,arrHtml,'>')
+  let { successCount } = returnContinu(index, arrHtml, ">");
   let htmlStr = createElementQ("div", { class: "quote" }, "div");
   //处理引用
   for (let i = 0; i < arrHtml.length; i++) {
@@ -175,14 +190,14 @@ function returnQuote(content, index = null) {
     }
   }
   htmlArr.splice(index + 1, successCount);
-  htmlStr.splice(1,0,arrHtml.join(''))
-  htmlData = htmlData.concat(htmlStr.join(''));
+  htmlStr.splice(1, 0, arrHtml.join(""));
+  htmlData = htmlData.concat(htmlStr.join(""));
   return false;
 }
 
 //----------------------------图片语法--------------------------------
 function returnImg(item) {
-  console.log("这是传进来的", item);
+  // console.log(item, "item");
   item = item.trim();
   let rule = {
     0: "!",
@@ -202,7 +217,7 @@ function returnImg(item) {
   if (
     item[0] === rule["0"] &&
     r1 < r2 &&
-    r2 < item.indexOf(r3) &&
+    r2 < item.indexOf(rule['3']) &&
     r3 < r4 &&
     item[item.length - 1] === rule["4"]
   ) {
@@ -212,28 +227,30 @@ function returnImg(item) {
       src = str.split(" ")[0];
       imgTitle = str.split(" ")[1];
     }
-    htmlData.push(createElementQ("img", { alt, src, title: imgTitle }).join(''));
+    htmlData.push(
+      createElementQ("img", { alt, src, title: imgTitle }).join("")
+    );
   }
 }
 
 //----------------------------无序列表-------------------------------------
 function returnOl(content) {
-    let ol = createElementQ('ol',{},'ol') 
-    if(content.length){
-       for(let i=0;i<content.length;i++){
-        let li = createElementQ('li',{},'li')
-           for(let key in content[i]){
-              if(key === 'children'){
-                let olC = returnOl(content[i][key])
-                li.splice(li.length-1,0,olC)
-              }else{
-                li.splice(li.length-1,0,content[i][key])
-              }
-           }
-           ol.splice(ol.length-1,0,li)
-       }
+  let ol = createElementQ("ol", {}, "ol");
+  if (content.length) {
+    for (let i = 0; i < content.length; i++) {
+      let li = createElementQ("li", {}, "li");
+      for (let key in content[i]) {
+        if (key === "children") {
+          let olC = returnOl(content[i][key]);
+          li.splice(li.length - 1, 0, olC);
+        } else {
+          li.splice(li.length - 1, 0, content[i][key]);
+        }
+      }
+      ol.splice(ol.length - 1, 0, li);
     }
-    return ol
+  }
+  return ol;
 }
 
 //创建标签
@@ -249,21 +266,21 @@ function createElementQ(name, classObj) {
 }
 
 /**
- * 
+ *
  * @param {*} index 当前位置索引
  * @returns {
  *    successCount 连续的个数
  * label 开头标签
  * }
  */
-function returnContinu(index,arrHtml,label,num=2){
+function returnContinu(index, arrHtml, label, num = 2) {
   let flag = true;
   let i = index + 1; //初始当前数据的下一条
   let successCount = 0; //要删除的数量
   while (flag) {
     if (htmlArr[i]) {
       let str = htmlArr[i][0];
-      if (label.indexOf(str) !==-1) {
+      if (label.indexOf(str) !== -1) {
         //连续的引用数量
         arrHtml.push(htmlArr[i].slice(num));
         i = i + 1;
@@ -277,7 +294,54 @@ function returnContinu(index,arrHtml,label,num=2){
     }
   }
   return {
-      successCount
-  }
+    successCount,
+  };
 }
-//多行连续的方法例:(引用,有无序列表)
+//代码块
+function returnCodeBlock(item,index){
+    let len;
+    htmlArr.slice(index+1).forEach((item2,index2)=>{
+       if(item2.slice(0,4) === '````'){
+        len = index2 
+        console.log('结束代码块',index,len)
+       }
+    })
+    console.log(htmlArr,htmlArr.length,'htmlArr')
+    let arr = htmlArr.slice(index-1,index+len+1)
+    console.log(arr,'arrrrrr')
+    let code = createElementQ('code',{class:'code'})
+    arr.forEach(item=>{
+      let arrC = item.split(' ')
+      console.log(arrC,'arrcccccccccccccccc')
+      let p = createElementQ("p",{})
+      arrC.forEach((item2,index2)=>{
+        let k;
+        for(let key in keys){
+          console.log(item2,keys[key],'item2222222222222222222222222222222222222')
+          if(keys[key].indexOf(item2) !== -1){
+              k = key
+              console.log(k,'kekkkkk')
+          }else{
+            k = false
+          }
+        }
+        console.log(k,'kkkkkeeeec')
+        if(k!==false){
+          console.log('走这里了')
+          let text = createElementQ("text",{
+            style:`${k}`
+          }).splice(1,0,item2).join(' ')
+          p.splice(p.length-1,0,text) 
+          console.log(p,'ppppppppppdddddd')
+          
+        }
+      })
+      code.splice(code.length-1,0,p.join(' '))
+
+    })
+    //到这个地方都插进去了已经
+    htmlData.push(code.join(' '))
+    console.log(htmlData,'dataaaaaaaa')
+    htmlArr.splice(index,len+1)
+
+}
