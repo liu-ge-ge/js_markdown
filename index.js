@@ -1,11 +1,20 @@
-const fs = require("fs");
-const data = fs.readFileSync("./js_markdown.md", "utf-8");
+// const fs = require("fs");
+// const data = fs.readFileSync("./js_markdown.md", "utf-8");
 // console.log(data,'datra')
-let keys = {
-  "red":["let","var","function","=","for"],
-  "blue":["console.log"]
-}
-htmlRes(data);
+let keyword = [
+  "let",
+  "var",
+  "=>",
+  "+",
+  "=",
+  ":",
+  "case",
+  "for",
+  "function",
+  "switch",
+  "console.log",
+];
+// htmlRes(data);
 var htmlArr = [];
 var htmlData = []; //html元素数组
 var titleArr = []; //列表数组
@@ -81,14 +90,14 @@ function htmlRes(data) {
     }
 
     //html标签
-    if(/^<[a-z]* *style=\".*\">.*<\/[a-z]*>/.test(item)){
-      htmlData.push(item)
+    if (/^<[a-z]* *style=\".*\">.*<\/[a-z]*>/.test(item)) {
+      htmlData.push(item);
     }
 
     //代码块
     // console.log(item,'item3')
-    if(item.slice(0,4) === '````'){
-       returnCodeBlock(item,index)
+    if (item.slice(0, 4) === "````") {
+      returnCodeBlock(item, index);
     }
     // console.log(JSON.stringify(titleArr) ,'\n' ,'连续的空格数')
   });
@@ -217,7 +226,7 @@ function returnImg(item) {
   if (
     item[0] === rule["0"] &&
     r1 < r2 &&
-    r2 < item.indexOf(rule['3']) &&
+    r2 < item.indexOf(rule["3"]) &&
     r3 < r4 &&
     item[item.length - 1] === rule["4"]
   ) {
@@ -298,50 +307,168 @@ function returnContinu(index, arrHtml, label, num = 2) {
   };
 }
 //代码块
-function returnCodeBlock(item,index){
-    let len;
-    htmlArr.slice(index+1).forEach((item2,index2)=>{
-       if(item2.slice(0,4) === '````'){
-        len = index2 
-        console.log('结束代码块',index,len)
-       }
-    })
-    console.log(htmlArr,htmlArr.length,'htmlArr')
-    let arr = htmlArr.slice(index-1,index+len+1)
-    console.log(arr,'arrrrrr')
-    let code = createElementQ('code',{class:'code'})
-    arr.forEach(item=>{
-      let arrC = item.split(' ')
-      console.log(arrC,'arrcccccccccccccccc')
-      let p = createElementQ("p",{})
-      arrC.forEach((item2,index2)=>{
-        let k;
-        for(let key in keys){
-          console.log(item2,keys[key],'item2222222222222222222222222222222222222')
-          if(keys[key].indexOf(item2) !== -1){
-              k = key
-              console.log(k,'kekkkkk')
-          }else{
-            k = false
-          }
-        }
-        console.log(k,'kkkkkeeeec')
-        if(k!==false){
-          console.log('走这里了')
-          let text = createElementQ("text",{
-            style:`${k}`
-          }).splice(1,0,item2).join(' ')
-          p.splice(p.length-1,0,text) 
-          console.log(p,'ppppppppppdddddd')
-          
-        }
-      })
-      code.splice(code.length-1,0,p.join(' '))
+function returnCodeBlock(item, index) {
+  let len;
+  htmlArr.slice(index + 1).forEach((item2, index2) => {
+    if (item2.slice(0, 4) === "````") {
+      len = index2;
+      console.log("结束代码块", index, len);
+    }
+  });
+  let arr = htmlArr.slice(index + 1, index + len + 1);
+  let code = createElementQ("div", { class: "code" });
+  let s = blockHighLight(arr)
+  s = s.replace(/classeqs/g, "class=")
+  s = s.replace(/styleeqs/g,"style=")
+  s = s.replace(/\&mh\&/g,':');
+  code.splice(code.length - 1, 0, s);
 
-    })
-    //到这个地方都插进去了已经
-    htmlData.push(code.join(' '))
-    console.log(htmlData,'dataaaaaaaa')
-    htmlArr.splice(index,len+1)
-
+  console.log(arr, "arrrrr");
+  // arr.forEach(item=>{
+  //   let arrC = item.split(' ')
+  //   let p = createElementQ("p",{})
+  //   arrC.forEach((item2,index2)=>{
+  //     if(item2 !== ' '){ //判断不是空格
+  //       // debugger
+  //       for(let key in keys){ //遍历关键字
+  //         if(keys[key].indexOf(item2) !== -1){
+  //           let text = createElementQ("text",{
+  //             style:`color:${key}`
+  //           })
+  //           text.splice(1,0,item2)
+  //           p.splice(p.length-1,0,text.join(' '))
+  //         }else{
+  //           let text = createElementQ("text",{})
+  //           text.splice(1,0,item2)
+  //           p.splice(p.length-1,0,text.join(' '))
+  //         }
+  //       }
+  //     }
+  //   })
+  //   if(p.length > 2){
+  //     code.splice(code.length-1,0,p.join(' '))
+  //   }
+  // })
+  //到这个地方都插进去了已经
+  htmlData.push(code.join(" "));
+  htmlArr.splice(index, len + 1);
 }
+
+//代码块高亮处理函数
+/**
+ *
+ * @param {Array} arr 数据
+ */
+function blockHighLight(arr) {
+  let arr2 = [];
+  arr.forEach((item, index) => {
+    if (item.trim() !== "") {
+      arr2.push(keywordsHighLight(symbolHighLight(fnHighLight(item))));
+    }
+  });
+  return arr2.join("");
+}
+
+//处理关键字 高亮函数 #c3655d
+function keywordsHighLight(row) {
+  let num = fnBlockNum(row)
+  console.log(row,'rrrrrreeeeeeeeeeeee',num)
+  let str = row;
+  //  let arr =['let','var','=>','+','=',':',"case",'for','function','switch','console.log']
+  keyword.forEach((item, index) => {
+    if (str.indexOf(item) !== -1) {
+      // arr[item.indexOf('class')+5]
+      str = insertStr(
+        str,
+        str.indexOf(item),
+        `<text classeqs"keywords">${item}</text>`,
+        item.length
+      );
+    }
+  });
+  return `<p  styleeqs"margin-left&mh&${num*5}px;" >${str}</p>`;
+}
+
+//处理符号高亮 #0086cd
+function symbolHighLight(row) {
+  
+  //判断是数字
+  let arr = row.split("");
+  //  debugger
+  arr.forEach((item, index) => {
+    console.log(index == row.indexOf('px')-2 || index == row.indexOf('px')-1,row)
+    if (
+      !isNaN(Number(item)) &&
+      item.trim() !== "" &&
+      arr[index - 1] !== "'" &&
+      arr[index + 1] !== "'" && 
+      (index == row.indexOf('px')-3)
+
+    ) {
+      arr[index] = `<text classeqs"symbol">${item}</text>`;
+    }
+  });
+  return `${arr.join("")}`;
+}
+
+//
+function fnHighLight(row) {
+  let num = fnBlockNum(row)
+  let str = "";
+  if (/[a-z]*\(*\)/.test(row.trim())) {
+    let arr = row.split("(");
+    if (
+      keyword.indexOf(arr[0].trim()) == -1 &&
+      arr[0].trim().indexOf(" ") === -1 &&
+      arr[0].trim() !== ""
+    ) {
+      console.log([
+        arr[1],
+        row.indexOf("(") - arr[0].trim().length,
+        `<text classeqs"fn">${arr[0].trim()}</text>`,
+        0
+      ])
+      str = `<text classeqs"fn" styleeqs"margin-left&mh&${num*5}px;">${arr[0].trim()}</text>(` + arr[1]
+    }
+  }
+
+  if (str === "") {
+    return row;
+  } else {
+    return str;
+  }
+}
+
+//方法：
+//soure 原字符串
+//start 位置
+//newStr 要插入的字符串
+function insertStr(soure, start, newStr, num) {
+  let arr = [soure.slice(0, start), newStr, soure.slice(start + num)];
+  return arr.join("");
+}
+
+function fnBlockNum(str){
+    let arr = str.split('')
+    if(!arr[0]===' ')return 0
+    console.log(arr,'lllllllllllllllllll')
+    let num = 0
+    let flag = true
+    arr.forEach((item,index)=>{
+      if(item == ' '){
+        num++
+      }else{
+        return num
+      }
+    })
+    return num
+}
+
+
+/***
+ * 
+ * 目前遇到一些暂时不可解决的问题
+ * 1.class=用classeqs来代替最后替换
+ * 2.style=用styleeqs来代替最后替换
+ * 3.”：“ 用&mh&
+ */

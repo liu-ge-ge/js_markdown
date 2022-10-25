@@ -4,3 +4,21 @@
     border-left: 4px solid rgb(155, 151, 151);
     background-color: #eee;
 }
+
+.code{
+   padding: 10px;
+   background-color: #eee; 
+   width: 100%;
+   margin:10px 0 ;
+   font-size: 15px;
+}
+
+.symbol{
+    color:#0086cd
+}
+.keywords{
+    color:#a71d5d
+}
+.fn{
+    color:#8d5db5
+}
