@@ -6,6 +6,8 @@ let keyword = [
   "var",
   "=>",
   "+",
+  "===",
+  "==",
   "=",
   ":",
   "case",
@@ -13,6 +15,15 @@ let keyword = [
   "function",
   "switch",
   "console.log",
+  "if",
+  "else",
+  "split",
+  "&&",
+  "||",
+  "indexOf",
+  "slice",
+  "trim",
+  "push",
 ];
 // htmlRes(data);
 var htmlArr = [];
@@ -90,7 +101,7 @@ function htmlRes(data) {
     }
 
     //html标签
-    if (/^<[a-z]* *style=\".*\">.*<\/[a-z]*>/.test(item)) {
+    if (/^<[a-z]* *>.*<\/[a-z]*>/.test(item) && item.indexOf('script') === -1) {
       htmlData.push(item);
     }
 
@@ -317,38 +328,14 @@ function returnCodeBlock(item, index) {
   });
   let arr = htmlArr.slice(index + 1, index + len + 1);
   let code = createElementQ("div", { class: "code" });
+  let codeChild = createElementQ("div", { class: "codeChild" });
+  code.splice(code.length - 1, 0,'<div class="language">JS</div>');
   let s = blockHighLight(arr)
   s = s.replace(/classeqs/g, "class=")
   s = s.replace(/styleeqs/g,"style=")
   s = s.replace(/\&mh\&/g,':');
-  code.splice(code.length - 1, 0, s);
-
-  console.log(arr, "arrrrr");
-  // arr.forEach(item=>{
-  //   let arrC = item.split(' ')
-  //   let p = createElementQ("p",{})
-  //   arrC.forEach((item2,index2)=>{
-  //     if(item2 !== ' '){ //判断不是空格
-  //       // debugger
-  //       for(let key in keys){ //遍历关键字
-  //         if(keys[key].indexOf(item2) !== -1){
-  //           let text = createElementQ("text",{
-  //             style:`color:${key}`
-  //           })
-  //           text.splice(1,0,item2)
-  //           p.splice(p.length-1,0,text.join(' '))
-  //         }else{
-  //           let text = createElementQ("text",{})
-  //           text.splice(1,0,item2)
-  //           p.splice(p.length-1,0,text.join(' '))
-  //         }
-  //       }
-  //     }
-  //   })
-  //   if(p.length > 2){
-  //     code.splice(code.length-1,0,p.join(' '))
-  //   }
-  // })
+  codeChild.splice(codeChild.length - 1, 0, s);
+  code.splice(code.length - 1, 0,codeChild.join(''));
   //到这个地方都插进去了已经
   htmlData.push(code.join(" "));
   htmlArr.splice(index, len + 1);
@@ -363,7 +350,7 @@ function blockHighLight(arr) {
   let arr2 = [];
   arr.forEach((item, index) => {
     if (item.trim() !== "") {
-      arr2.push(keywordsHighLight(symbolHighLight(fnHighLight(item))));
+      arr2.push(keywordsHighLight(symbolHighLight(fnHighLight(handleNotes(item)))));
     }
   });
   return arr2.join("");
@@ -371,38 +358,41 @@ function blockHighLight(arr) {
 
 //处理关键字 高亮函数 #c3655d
 function keywordsHighLight(row) {
+  if(row.indexOf('notes')!==-1)return row
   let num = fnBlockNum(row)
-  console.log(row,'rrrrrreeeeeeeeeeeee',num)
   let str = row;
   //  let arr =['let','var','=>','+','=',':',"case",'for','function','switch','console.log']
-  keyword.forEach((item, index) => {
-    if (str.indexOf(item) !== -1) {
-      // arr[item.indexOf('class')+5]
+  let index = 0
+  for(let i=0;i<keyword.length;i++){
+    if (str.indexOf(keyword[i],index) !== -1) {
+      index = i
       str = insertStr(
         str,
-        str.indexOf(item),
-        `<text classeqs"keywords">${item}</text>`,
-        item.length
+        str.indexOf(keyword[i]),
+        `<text classeqs"keywords">${keyword[i]}</text>`,
+        keyword[i].length
       );
+    }else{
+      index = 0
     }
-  });
+  }
+
   return `<p  styleeqs"margin-left&mh&${num*5}px;" >${str}</p>`;
 }
 
 //处理符号高亮 #0086cd
 function symbolHighLight(row) {
-  
+  if(row.indexOf('notes')!==-1)return row
+
   //判断是数字
   let arr = row.split("");
   //  debugger
   arr.forEach((item, index) => {
     console.log(index == row.indexOf('px')-2 || index == row.indexOf('px')-1,row)
     if (
-      !isNaN(Number(item)) &&
-      item.trim() !== "" &&
-      arr[index - 1] !== "'" &&
-      arr[index + 1] !== "'" && 
-      (index == row.indexOf('px')-3)
+      !isNaN(Number(item))&&
+      item.trim() !== "" && 
+      (row.indexOf('px') == -1 || index > row.indexOf('px'))
 
     ) {
       arr[index] = `<text classeqs"symbol">${item}</text>`;
@@ -411,8 +401,9 @@ function symbolHighLight(row) {
   return `${arr.join("")}`;
 }
 
-//
+//函数高亮
 function fnHighLight(row) {
+  if(row.indexOf('notes')!==-1)return row
   let num = fnBlockNum(row)
   let str = "";
   if (/[a-z]*\(*\)/.test(row.trim())) {
@@ -443,26 +434,37 @@ function fnHighLight(row) {
 //soure 原字符串
 //start 位置
 //newStr 要插入的字符串
+//num 后边需要删除的数量
 function insertStr(soure, start, newStr, num) {
   let arr = [soure.slice(0, start), newStr, soure.slice(start + num)];
   return arr.join("");
 }
-
+//缩进处理
 function fnBlockNum(str){
     let arr = str.split('')
     if(!arr[0]===' ')return 0
-    console.log(arr,'lllllllllllllllllll')
     let num = 0
     let flag = true
-    arr.forEach((item,index)=>{
-      if(item == ' '){
-        num++
-      }else{
-        return num
-      }
-    })
+    if(arr[0] === ' '){
+      arr.forEach((item,index)=>{
+        if(item === ' '){
+          num++
+        }else{
+          return num
+        }
+      })      
+    }
     return num
 }
+
+//处理注释
+function handleNotes(str){
+  if(str.trim().slice(0,2)=== '//'){
+    return `<p><text classeqs"notes">${str}</text></p>`
+  }
+  return str
+}
+
 
 
 /***

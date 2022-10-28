@@ -4,13 +4,21 @@
     border-left: 4px solid rgb(155, 151, 151);
     background-color: #eee;
 }
-
 .code{
-   padding: 10px;
-   background-color: #eee; 
+    position: relative;
+    padding: 30px;
+    width: 90%;
+    margin:10px 0 ;
+    font-size: 15px;
+    border-radius:30px ;
+    /* height: 400px; */
+    background-color: rgb(214, 211, 211); 
+}
+.code .codeChild{
    width: 100%;
-   margin:10px 0 ;
-   font-size: 15px;
+   position: relative;
+   max-height: 400px;
+   overflow-y: auto;
 }
 
 .symbol{
@@ -22,3 +30,27 @@
 .fn{
     color:#8d5db5
 }
+.notes{
+    color: #676e7e;
+}
+.code .language{
+    position: absolute;
+    right: 10px;
+    top:10px;
+    font-size: 30px;
+    font-weight: bold;
+    color: #676e7e;
+}
+
+::-webkit-scrollbar { /* 滚动条宽 */
+    width: 0px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-thumb { /* 滚动条 拖动条 */
+    background-color: rgba(0,0,0,.2);
+    border-radius: 6px;
+  }
+  ::-webkit-scrollbar-track { /* 滚动条背景槽 */
+    background-color: #eee;
+    border-radius: 6px;
+  }

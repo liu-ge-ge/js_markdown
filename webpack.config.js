@@ -5,11 +5,5 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
     filename: "js/index.js",
   },
-  node:{
-    fs:'empty'
-  },
-  module: {
-    rules: [
-    ],
-  },
+  mode:'development'
 };

@@ -12,8 +12,9 @@
     <img src="./dryhfhryh.png" alt="">
     <script src="./index.js"></script>
     <script>
-      const res = htmlRes(`
-        
+      const res = htmlRes(`        
+      
+<p>&#128512; &#128516; &#128525; &#128151;&#127817;</p>
 ### 这是一个标题 ### 这是一个标题
 #### 这是一个标题
 ### 这是一个标题
@@ -22,7 +23,7 @@
 
 ### 这是一个标题
 
- 这是一个连接[点击](http:www.baidu.com)
+这是一个连接[点击](http:www.baidu.com)
 
 > ### 这是一个引用标题
 > 这是一个引用
@@ -54,6 +55,7 @@ var a=33232343
 let a = 33243
 let a = 1;
 let b = 2;
+let str = 'liuge'
 let obj = {
     a:'1',
     b:'2',
@@ -75,6 +77,43 @@ fn()
 switch(){
     case:''
 }
+function returnImg(item) {
+  // console.log(item, "item");
+item = item.trim();
+let rule = {
+    0: "!",
+    1: "[",
+    2: "]",
+    3: "(",
+    4: ")",
+};
+let r0 = item.indexOf(rule["0"]);
+let r1 = item.indexOf(rule["1"], r0);
+let r2 = item.indexOf(rule["2"], r1);
+let r3 = item.indexOf(rule["3"], r2);
+let r4 = item.indexOf(rule["4"], r3);
+let alt = "";
+let src = "";
+let imgTitle = "";
+if (
+    item[0] === rule["0"] &&
+    r1 < r2 &&
+    r2 < item.indexOf(rule["3"]) &&
+    r3 < r4 &&
+    item[item.length - 1] === rule["4"]
+  ) {
+    alt = item.slice(r1 + 1, r2);
+    let str = item.slice(r3 + 1, r4);
+    if (str.indexOf(" ") !== -1) {
+      src = str.split(" ")[0];
+      imgTitle = str.split(" ")[1];
+    }
+    htmlData.push(
+      createElementQ("img", { alt, src, title: imgTitle }).join("")
+    );
+  }
+}
+//这是衣阿华那个
 \`\`\`\`
         `);
 let div = document.querySelector('div')

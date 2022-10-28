@@ -23,6 +23,9 @@ function fn(1){
 for(let i=0;i<1100;i++){
     console.log(i)
 }
+if(false){
+
+}
 fn()
 switch(){
     case:''
@@ -33,4 +36,9 @@ switch(){
  * 
  * 
  */
+
 ```
+| Syntax | Description |
+| --- | ----------- |
+| Header | Title |
+| Paragraph | Text |
