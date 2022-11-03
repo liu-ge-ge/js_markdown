@@ -29,12 +29,14 @@ let keyword = [
 var htmlArr = [];
 var htmlData = []; //html元素数组
 var titleArr = []; //列表数组
-
+var control = true; //控制添加普通文字
 //判断是不是####
-function htmlRes(data) {
+export function htmlRes(data) {
+  htmlData = []
+  console.log('输出传进来的数据看看到底有没有问题',data)
   if (htmlArr === undefined) htmlArr = [];
   htmlArr = data.split("\n");
-  // console.log(htmlArr,'htmlArrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr')
+  console.log(htmlArr,'htmlArrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr')
   htmlArr.forEach((item, index) => {
     item = item.trim();
     //标题
@@ -42,34 +44,41 @@ function htmlRes(data) {
       let titleRes = retrunTitle(item);
       if (titleRes) {
         htmlData.push(titleRes);
+        control = false
+        return
       }
     }
     // //超链接 字符必须超过6个
     if (item.length > 6 && item.trim()[0] !== "!") {
-      ifLink(item);
+      ifLink(item,index);
     }
     //引用语法
     if (item.length > 2 && item[0] == ">") {
+      console.log('引用语法',item)
       htmlData.push(returnQuote(item, index));
     }
     //图片
     if (item.length > 5 && item[0] == "!") {
-      returnImg(item);
+      returnImg(item,index);
     }
     //判断有序列表
     if (returnIsOl(item)) {
       let arr = htmlArr[index].split("");
+      console.log(arr,'arrrrrrrrrrrrrr')
       let num = 0;
       let flag = true;
       let i = 0;
+      //检查前边的缩进数量
       while (flag) {
-        if (arr[i] === " ") {
+        console.log(arr[i],arr[i].trim() === '')
+        if (arr[i].trim() == '') {
           num = num + 1;
         } else {
           flag = false;
         }
         i = i + 1;
       }
+      //检查缩进
       if (num % 4 === 0 && num !== 0) {
         let sign = num / 4;
         if (!titleArr) titleArr = [];
@@ -90,33 +99,43 @@ function htmlRes(data) {
         if (!titleArr) titleArr = [];
         titleArr.push({ 0: item, children: [] });
       }
-      // console.log(JSON.stringify(titleArr),'titleArr11111',returnIsOl(htmlArr[index+1]),htmlArr[index+1])
       if (!returnIsOl(htmlArr[index + 1])) {
         //这里判断下一行是不是li不是的话直接处理数据并清空 titleArr
         //进行处理
         let ol = returnOl(titleArr);
         htmlData.push(ol.flat(Infinity).join(" "));
         titleArr = []; //制空处理
+      }else{
+        //如果下一行是就控制
+        control = false
       }
+      control = false
     }
-
     //html标签
     if (/^<[a-z]* *>.*<\/[a-z]*>/.test(item) && item.indexOf('script') === -1) {
       htmlData.push(item);
     }
-
     //代码块
     // console.log(item,'item3')
     if (item.slice(0, 4) === "````") {
       returnCodeBlock(item, index);
     }
+    if(control === true){
+      console.log('走到这里',htmlArr,control)
+      htmlData.push(`<p>${item}</p>`)
+    }
+    control = true;//走一圈之后再变回true
     // console.log(JSON.stringify(titleArr) ,'\n' ,'连续的空格数')
   });
 
   return htmlData;
 }
 function returnIsOl(item) {
-  return "0123456789".indexOf(item.trim()[0] - 0) !== -1;
+  if(item === undefined || item.indexOf('.') == -1)return false
+  item = item.trim()
+  let arr = item.split('.')
+  console.log(item,arr[0],'arr[0]')
+  return isNumber(arr[0]);
 }
 //判断有没有这个深度的children
 function callBackFn(data, num) {
@@ -159,7 +178,7 @@ function createElement(num, item) {
 }
 
 //判断是不是超链接--------------------------------------------------------------
-function ifLink(content) {
+function ifLink(content,index) {
   content = content.trim();
   // []()
   let arr = ["[", "]", "(", ")"];
@@ -184,9 +203,9 @@ function ifLink(content) {
       let link = content.slice(arr2[2] + 1, arr2[3]);
       if (htmlData === undefined) htmlData = [];
       htmlData.push(`<a href="${link}" alt="图片">${aText}</a>`);
+      htmlArr.splice(index,1)
+      control = false
     }
-  } else {
-    return;
   }
 }
 
@@ -212,11 +231,11 @@ function returnQuote(content, index = null) {
   htmlArr.splice(index + 1, successCount);
   htmlStr.splice(1, 0, arrHtml.join(""));
   htmlData = htmlData.concat(htmlStr.join(""));
-  return false;
+  control = false
 }
 
 //----------------------------图片语法--------------------------------
-function returnImg(item) {
+function returnImg(item,index) {
   // console.log(item, "item");
   item = item.trim();
   let rule = {
@@ -247,9 +266,13 @@ function returnImg(item) {
       src = str.split(" ")[0];
       imgTitle = str.split(" ")[1];
     }
-    htmlData.push(
-      createElementQ("img", { alt, src, title: imgTitle }).join("")
-    );
+    htmlData.push(`
+    <div id="line">
+    ${createElementQ("img", { alt, src, title: imgTitle }).join("")}
+    </div>`
+);
+    htmlArr.splice(index,1)
+    control = false
   }
 }
 
@@ -338,7 +361,9 @@ function returnCodeBlock(item, index) {
   code.splice(code.length - 1, 0,codeChild.join(''));
   //到这个地方都插进去了已经
   htmlData.push(code.join(" "));
+  console.log(index,'这是第几行')
   htmlArr.splice(index, len + 1);
+  control = false
 }
 
 //代码块高亮处理函数
@@ -465,6 +490,20 @@ function handleNotes(str){
   return str
 }
 
+  /**
+* 校验只要是数字（包含正负整数，0以及正负浮点数）就返回true
+**/
+
+function isNumber(val){
+
+  var regPos = /^[0-9]+.?[0-9]*/; //判断是否是数字。
+
+  if(regPos.test(val) ){
+      return true;
+  }else{
+      return false;
+  }
+}
 
 
 /***
